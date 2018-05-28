@@ -27,8 +27,7 @@ export class PickAddressPage {
     let localUser = this.storage.getLocalUser();
     if(localUser && localUser.email){
       this.clienteService.findByEmail(localUser.email).subscribe(response => {
-        this.items = response['enderecos'];
-        this.getImageIfExist;
+        this.items = response['enderecos'];        
       },
       error => {
         if(error.status == 403){
