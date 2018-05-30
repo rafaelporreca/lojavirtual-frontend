@@ -14,6 +14,7 @@ export class PedidoService{
         {
             observe: 'response',
             responseType:'text'
-        })
+        });
+        
     }
 }
