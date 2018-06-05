@@ -27,7 +27,7 @@ export class ProfilePage {
   constructor(public navCtrl: NavController, public navParams: NavParams, public storage: StorageService, public clienteService: ClienteService,public camera: Camera) {
   }
 
-  ionViewDidLoad() {
+  loadData(){
     let localUser = this.storage.getLocalUser();
     if(localUser && localUser.email){
       this.clienteService.findByEmail(localUser.email).subscribe(response => {
@@ -43,6 +43,10 @@ export class ProfilePage {
       this.navCtrl.setRoot('HomePage');
     }
     console.log('ionViewDidLoad ProfilePage');
+  }
+
+  ionViewDidLoad() {
+    this.loadData();
   }
 
   getImageIfExist(){
@@ -71,4 +75,16 @@ export class ProfilePage {
     });
   }
 
+    sendPicture(){
+      this.clienteService.uploadPicture(this.picture)
+        .subscribe(response => {
+          this.picture = null;
+          this.loadData();
+        },
+      error =>{});
+    }
+
+    cancel(){
+      this.picture = null;
+    }
 }
