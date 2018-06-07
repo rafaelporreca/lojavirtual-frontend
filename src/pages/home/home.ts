@@ -39,7 +39,6 @@ export class HomePage {
   }
 
   login(){
-    console.log(this.creds);
     this.auth.authenticate(this.creds)
     .subscribe(response => {
       this.auth.successfulLogin(response.headers.get('Authorization'));

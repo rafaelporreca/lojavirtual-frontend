@@ -5,6 +5,7 @@ import { ClienteDTO } from '../../models/cliente.dto';
 import { ClienteService } from '../../services/domain/cliente.service';
 import { API_CONFIG } from '../../config/api.config';
 import { CameraOptions, Camera } from '@ionic-native/camera';
+import { DomSanitizer } from '@angular/platform-browser';
 
 /**
  * Generated class for the ProfilePage page.
@@ -17,14 +18,24 @@ import { CameraOptions, Camera } from '@ionic-native/camera';
 @Component({
   selector: 'page-profile',
   templateUrl: 'profile.html',
+  
 })
 export class ProfilePage {
 
   cliente: ClienteDTO;
   picture: string;
   cameraOn: boolean = false;
+  profileImage;
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, public storage: StorageService, public clienteService: ClienteService,public camera: Camera) {
+  constructor(
+    public navCtrl: NavController, 
+    public navParams: NavParams, 
+    public storage: StorageService, 
+    public clienteService: ClienteService,
+    public camera: Camera, 
+    public sanitizer: DomSanitizer) {
+
+      this.profileImage = 'assets/imgs/avatar-blank.png';
   }
 
   loadData(){
@@ -32,7 +43,7 @@ export class ProfilePage {
     if(localUser && localUser.email){
       this.clienteService.findByEmail(localUser.email).subscribe(response => {
         this.cliente = response as ClienteDTO;
-        this.getImageIfExist;
+        this.getImageIfExist();
       },
       error => {
         if(error.status == 403){
@@ -42,7 +53,6 @@ export class ProfilePage {
     }else{
       this.navCtrl.setRoot('HomePage');
     }
-    console.log('ionViewDidLoad ProfilePage');
   }
 
   ionViewDidLoad() {
@@ -50,10 +60,27 @@ export class ProfilePage {
   }
 
   getImageIfExist(){
-    this.clienteService.getImageFromBucket(this.cliente.id).subscribe(response => {
-      this.cliente.imageUrl = `${API_CONFIG.bucketBaseUrl}/cp${this.cliente.id}.png`;
+    this.clienteService.getImageFromBucket(this.cliente.id)
+    .subscribe(response => {
+      this.cliente.imageUrl = `${API_CONFIG.bucketBaseUrl}/cp${this.cliente.id}.jpg`;
+      this.blobToDataURL(response).then(dataUrlL =>{
+        let str = dataUrlL as string;
+        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(str);
+         
+      })
     },
-  error => {});
+   error => {
+     this.profileImage = 'assets/imgs/avatar-blank.png';
+   });
+  }
+
+  blobToDataURL(blob){
+    return new Promise((fulfill,reject) =>{
+      let reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = (e)=>fulfill(reader.result);
+      reader.readAsDataURL(blob);
+    })
   }
 
   getCameraPicture(){
@@ -72,6 +99,28 @@ export class ProfilePage {
      this.cameraOn = false;
     }, (err) => {
      // Handle error
+     this.cameraOn = false;
+    });
+  }
+
+  getGalleryPicture(){
+    this.cameraOn = true;
+    const options: CameraOptions = {
+      quality: 100,
+      sourceType: this.camera.PictureSourceType.PHOTOLIBRARY,
+      destinationType: this.camera.DestinationType.DATA_URL,
+      encodingType: this.camera.EncodingType.PNG,
+      mediaType: this.camera.MediaType.PICTURE
+    }
+    
+    this.camera.getPicture(options).then((imageData) => {
+     // imageData is either a base64 encoded string or a file URI
+     // If it's base64:
+     this.picture = 'data:image/png;base64,' + imageData;
+     this.cameraOn = false;
+    }, (err) => {
+     // Handle error
+     this.cameraOn = false;
     });
   }
 
@@ -79,7 +128,7 @@ export class ProfilePage {
       this.clienteService.uploadPicture(this.picture)
         .subscribe(response => {
           this.picture = null;
-          this.loadData();
+          this.getImageIfExist();
         },
       error =>{});
     }

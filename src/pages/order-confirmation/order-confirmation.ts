@@ -66,9 +66,10 @@ export class OrderConfirmationPage {
 
   checkout(){
     this.pedidoService.insert(this.pedido)
-      .subscribe(response => {          
+      .subscribe(response => {   
+        this.codPedido = this.extractid(response.headers.get('location'));        
         this.cartService.createOrClearCart();
-        this.codPedido = this.extractid(response.headers.get('location'));    
+           
       },
     error => {
       if(error.status == 403){
